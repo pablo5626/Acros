@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Para Anita</title>
+<style>
+  :root{
+    --fondo1:#2a0712;      /* vino oscuro */
+    --fondo2:#6b1230;      /* vino claro */
+    --rosa:#ff8fab;
+    --rojo:#e11d48;
+    --crema:#ffe9ef;
+    --dorado:#f5c26b;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0}
+  body{
+    background:radial-gradient(circle at 50% 40%,var(--fondo2),var(--fondo1) 70%);
+    color:var(--crema);
+    font-family:Georgia,"Times New Roman",serif;
+    overflow:hidden;
+  }
+
+  /* ---------- CAPA DEL HIPERESPACIO (canvas) ---------- */
+  #hiperespacio{
+    position:fixed;inset:0;width:100%;height:100%;z-index:0;
+    transition:opacity 1.5s ease;
+  }
+  #hiperespacio.tenue{opacity:.5}
+
+  /* ---------- DESTELLO DEL SALTO ---------- */
+  #destello{
+    position:fixed;inset:0;z-index:20;pointer-events:none;
+    background:radial-gradient(circle,#ffffff 0%,#ffd1de 40%,#ff8fab 100%);
+    opacity:0;transition:opacity .9s ease;
+  }
+  #destello.on{opacity:1;transition:opacity .35s ease-in}
+
+  /* ---------- ESCENAS ---------- */
+  .escena{
+    position:fixed;inset:0;z-index:5;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:max(24px,env(safe-area-inset-top)) 20px max(32px,env(safe-area-inset-bottom));
+    transition:opacity .8s ease, visibility .8s ease;
+    overflow-y:auto;
+  }
+  .escena.oculta{opacity:0;visibility:hidden;pointer-events:none}
+
+  /* ---------- CANDADO ---------- */
+  #candado{
+    background:none;border:0;padding:0;cursor:pointer;
+    width:min(60vw,240px);
+    filter:drop-shadow(0 10px 30px rgba(225,29,72,.45));
+    transition:transform .8s ease, filter .6s ease;
+    animation:latido 2s ease-in-out infinite;
+  }
+  #candado.abierto{
+    animation:none;
+    filter:drop-shadow(0 0 40px rgba(255,143,171,.9));
+  }
+  #escena-candado.oculta #candado{transform:scale(1.5)}
+  #candado svg{width:100%;height:auto;display:block;overflow:visible}
+
+  /* El arco (grillete) sube, luego gira sobre su pata derecha */
+  .grillete{
+    transform-box:view-box;
+    transform-origin:150px 120px;   /* punto de giro: pata derecha */
+  }
+  #candado.abierto .grillete{animation:abrir 1.2s ease-in-out forwards}
+  #candado.abierto .cuerpo{animation:clic .35s ease-out}
+  .ojo-llave{transition:fill .5s ease .5s}
+  #candado.abierto .ojo-llave{fill:#ffd1de}
+
+  @keyframes abrir{
+    0%  {transform:translateY(0) rotate(0deg)}
+    25% {transform:translateY(-6px) rotate(0deg)}
+    55% {transform:translateY(-24px) rotate(0deg)}
+    82% {transform:translateY(-24px) rotate(34deg)}
+    100%{transform:translateY(-22px) rotate(28deg)}
+  }
+  @keyframes clic{
+    0%,100%{transform:translateX(0)}
+    25%{transform:translateX(-3px)}
+    75%{transform:translateX(3px)}
+  }
+  @keyframes latido{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+  .pista{
+    margin-top:28px;font-style:italic;letter-spacing:.06em;
+    color:var(--rosa);transition:opacity .4s;
+    animation:parpadeo 2s ease-in-out infinite;
+  }
+  .pista.oculta{opacity:0;animation:none}
+  @keyframes parpadeo{0%,100%{opacity:.5}50%{opacity:1}}
+
+  /* ---------- ACRÓSTICO ---------- */
+  #escena-acrostico{justify-content:flex-start}
+  .contenido{margin:auto;width:100%;max-width:520px}
+  .titulo{
+    font-family:"Brush Script MT","Segoe Script",cursive;
+    font-size:clamp(2.2rem,10vw,3.2rem);color:var(--rosa);
+    margin:0 0 6px;text-align:center;
+    text-shadow:0 0 18px rgba(225,29,72,.7);
+  }
+  .subtitulo{
+    margin:0 0 22px;text-align:center;font-style:italic;
+    color:var(--dorado);letter-spacing:.08em;font-size:.95rem;
+  }
+  .tarjeta{
+    background:rgba(42,7,18,.6);
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+    border:1px solid rgba(255,143,171,.25);
+    border-radius:20px;padding:24px 20px;
+  }
+  .verso{
+    margin:0 0 18px;
+    font-size:clamp(1rem,4.2vw,1.2rem);line-height:1.55;
+    min-height:1.5em;
+  }
+  .verso:last-child{margin-bottom:0}
+  .inicial{
+    color:var(--rojo);font-weight:bold;
+    font-size:1.7em;line-height:1;margin-right:1px;
+    text-shadow:0 0 14px rgba(225,29,72,.6);
+  }
+  .cursor{
+    display:inline-block;width:2px;height:1.1em;margin-left:2px;
+    background:var(--rosa);vertical-align:text-bottom;
+    animation:cursor .8s steps(1) infinite;
+  }
+  @keyframes cursor{50%{opacity:0}}
+  .firma{
+    margin:20px 0 0;font-family:"Brush Script MT","Segoe Script",cursive;
+    font-size:1.7rem;color:var(--rosa);text-align:center;
+    opacity:0;transition:opacity 1.5s ease;
+  }
+  .firma.visible{opacity:1}
+</style>
+</head>
+<body>
+
+<canvas id="hiperespacio"></canvas>
+<div id="destello"></div>
+
+<!-- ============ ESCENA 1: CANDADO ============ -->
+<section class="escena" id="escena-candado">
+  <button id="candado" aria-label="Abrir candado">
+    <svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+      <g class="grillete">
+        <path d="M50 105 V70 a50 50 0 0 1 100 0 V128" fill="none" stroke="#f5c26b" stroke-width="16" stroke-linecap="round"/>
+      </g>
+      <g class="cuerpo">
+        <rect x="20" y="100" width="160" height="125" rx="22" fill="#e11d48"/>
+        <rect x="20" y="100" width="160" height="125" rx="22" fill="none" stroke="#ff8fab" stroke-width="4"/>
+        <circle class="ojo-llave" cx="100" cy="150" r="14" fill="#2a0712"/>
+        <rect class="ojo-llave" x="94" y="155" width="12" height="32" rx="5" fill="#2a0712"/>
+      </g>
+    </svg>
+  </button>
+  <!-- ✏️ EDITA AQUÍ: texto que aparece bajo el candado -->
+  <p class="pista" id="pista">Toca el candado</p>
+</section>
+
+<!-- ============ ESCENA 2: ACRÓSTICO ============ -->
+<section class="escena oculta" id="escena-acrostico">
+  <div class="contenido">
+
+    <!-- ✏️ EDITA AQUÍ: título principal -->
+    <h1 class="titulo">Para Anita</h1>
+
+    <!-- ✏️ EDITA AQUÍ: frase pequeña bajo el título -->
+    <p class="subtitulo">Lo especial que eres</p>
+
+    <div class="tarjeta" id="versos"></div>
+
+    <!-- ✏️ EDITA AQUÍ: firma final (aparece al terminar de escribir) -->
+    <p class="firma" id="firma">Con cariño ♥</p>
+  </div>
+</section>
+
+<script>
+/* =====================================================
+   CONFIGURACIÓN — todo lo editable está en este bloque
+   ===================================================== */
+
+/* ✏️ EDITA AQUÍ: LOS VERSOS DEL ACRÓSTICO
+   Cada verso DEBE empezar con la letra que corresponde (A-N-I-T-A).
+   La primera letra se resalta automáticamente en rojo y más grande. */
+const VERSOS = [
+  "Amarte cada día siempre será mi motivación para seguir intentando ser mejor",                                   // ← A
+  "Nunca he sabido expresar mis sentimientos porque para mí es complejo, pero contigo siempre decirlos ha sido más fácil", // ← N
+  "Increíble la vida por habernos juntado de la nada, y es algo que hasta el día de hoy sigo agradeciendo",         // ← I
+  "Te amo nunca ha sido una palabra demasiado grande para referirme a ti, porque es lo que siento y lo que siento es demasiado", // ← T
+  "A veces hay problemas, pero eso nunca ciega lo importante que eres para mí y lo que quiero contigo"              // ← A
+];
+
+/* ✏️ EDITA AQUÍ: VELOCIDAD DE LA MÁQUINA DE ESCRIBIR (milisegundos) */
+const VELOCIDAD_LETRA    = 40;   // menor = más rápido al escribir
+const PAUSA_ENTRE_VERSOS = 700;  // pausa al terminar cada verso
+
+/* ✏️ EDITA AQUÍ: LOS "ASTROS" DEL HIPERESPACIO (corazones y flores) */
+const EMOJIS = ["❤️", "💖", "💗", "🌹", "💕", "🌸", "🌷"];
+
+/* ✏️ EDITA AQUÍ: COLOR DE LAS ESTELAS (formato "R,G,B"; se elige uno al azar) */
+const COLORES_ESTELA = ["255,45,85", "255,143,171", "225,29,72", "255,194,214"];
+
+/* ✏️ EDITA AQUÍ: AJUSTES DEL EFECTO
+   (1.0 = recorre toda la profundidad en 1 segundo) */
+const CANTIDAD_PARTICULAS = 220;   // menos = más liviano en el celular
+const VEL_REPOSO  = 0.05;          // antes de tocar el candado (casi quieto)
+const VEL_SALTO   = 2.6;           // velocidad máxima del salto
+const VEL_CRUCERO = 0.28;          // velocidad de fondo mientras se lee el acróstico
+const DURACION_SALTO_MS = 3200;    // cuánto dura el salto antes del destello
+
+/* =====================================================
+   CÓDIGO (no hace falta tocar de aquí hacia abajo)
+   ===================================================== */
+const canvas = document.getElementById('hiperespacio');
+const ctx = canvas.getContext('2d');
+const candado = document.getElementById('candado');
+const pista = document.getElementById('pista');
+const escenaCandado = document.getElementById('escena-candado');
+const escenaAcrostico = document.getElementById('escena-acrostico');
+const contVersos = document.getElementById('versos');
+const firma = document.getElementById('firma');
+const destello = document.getElementById('destello');
+
+const dormir = ms => new Promise(r => setTimeout(r, ms));
+const azar = (a, b) => Math.random() * (b - a) + a;
+
+/* ---------- Hiperespacio ---------- */
+let W, H, cx, cy, foco;
+function ajustar() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cx = W / 2; cy = H / 2;
+  foco = Math.max(W, H) * 0.35;
+}
+ajustar();
+window.addEventListener('resize', ajustar);
+
+/* Cada emoji se dibuja una sola vez en un mini-lienzo (más rápido) */
+const sprites = EMOJIS.map(e => {
+  const c = document.createElement('canvas');
+  c.width = c.height = 96;
+  const g = c.getContext('2d');
+  g.font = '72px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText(e, 48, 52);
+  return c;
+});
+
+function nuevaParticula(inicial) {
+  const ang = Math.random() * Math.PI * 2;
+  const r = 0.05 + Math.pow(Math.random(), 0.7) * 1.1;
+  return {
+    x: Math.cos(ang) * r,
+    y: Math.sin(ang) * r,
+    z: inicial ? azar(0.05, 1) : 1,
+    v: azar(0.7, 1.3),                 // variación de velocidad
+    tam: azar(14, 28),
+    s: Math.floor(Math.random() * sprites.length),
+    col: COLORES_ESTELA[Math.floor(Math.random() * COLORES_ESTELA.length)]
+  };
+}
+const particulas = Array.from({ length: CANTIDAD_PARTICULAS }, () => nuevaParticula(true));
+
+let velocidad = VEL_REPOSO, objetivo = VEL_REPOSO, suavidad = 2;
+let ultimo = performance.now();
+
+function cuadro(t) {
+  const dt = Math.min(0.05, (t - ultimo) / 1000);
+  ultimo = t;
+  velocidad += (objetivo - velocidad) * Math.min(1, dt * suavidad);
+
+  ctx.clearRect(0, 0, W, H);
+
+  /* resplandor en el centro cuando va muy rápido */
+  if (velocidad > 0.8) {
+    const a = Math.min(0.35, (velocidad - 0.8) * 0.2);
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.5);
+    g.addColorStop(0, 'rgba(255,200,215,' + a + ')');
+    g.addColorStop(1, 'rgba(255,200,215,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  ctx.lineCap = 'round';
+  for (const p of particulas) {
+    p.z -= velocidad * p.v * dt;
+    const sx = cx + (p.x / p.z) * foco;
+    const sy = cy + (p.y / p.z) * foco;
+
+    if (p.z < 0.02 || sx < -120 || sx > W + 120 || sy < -120 || sy > H + 120) {
+      Object.assign(p, nuevaParticula(false));
+      continue;
+    }
+
+    const alfa = Math.min(1, (1 - p.z) * 2.5);
+    const tam = Math.min(80, p.tam * (0.25 / p.z));
+
+    /* estela: de la posición anterior a la actual */
+    const zp = Math.min(1.6, p.z + velocidad * p.v * 0.06);
+    const px = cx + (p.x / zp) * foco;
+    const py = cy + (p.y / zp) * foco;
+    if (Math.hypot(sx - px, sy - py) > 2) {
+      const gr = ctx.createLinearGradient(px, py, sx, sy);
+      gr.addColorStop(0, 'rgba(' + p.col + ',0)');
+      gr.addColorStop(1, 'rgba(' + p.col + ',' + alfa + ')');
+      ctx.strokeStyle = gr;
+      ctx.lineWidth = Math.max(1, tam * 0.18);
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(sx, sy);
+      ctx.stroke();
+    }
+
+    /* cabeza de la estela: el corazón o la flor */
+    if (tam > 4) {
+      ctx.globalAlpha = alfa;
+      ctx.drawImage(sprites[p.s], sx - tam / 2, sy - tam / 2, tam, tam);
+      ctx.globalAlpha = 1;
+    }
+  }
+  requestAnimationFrame(cuadro);
+}
+requestAnimationFrame(cuadro);
+
+/* ---------- Máquina de escribir ---------- */
+function bajarPantalla() {
+  escenaAcrostico.scrollTo({ top: escenaAcrostico.scrollHeight, behavior: 'smooth' });
+}
+
+async function escribirVersos() {
+  const cursor = document.createElement('span');
+  cursor.className = 'cursor';
+
+  for (const texto of VERSOS) {
+    const p = document.createElement('p');
+    p.className = 'verso';
+    const inicial = document.createElement('span');
+    inicial.className = 'inicial';
+    const resto = document.createElement('span');
+    p.append(inicial, resto, cursor);
+    contVersos.appendChild(p);
+
+    for (let i = 0; i < texto.length; i++) {
+      (i === 0 ? inicial : resto).textContent += texto[i];
+      if (i % 12 === 0) bajarPantalla();   // sigue el texto si se sale de la pantalla
+      await dormir(VELOCIDAD_LETRA);
+    }
+    await dormir(PAUSA_ENTRE_VERSOS);
+  }
+  cursor.remove();
+  firma.classList.add('visible');
+  bajarPantalla();
+}
+
+/* ---------- Secuencia al tocar el candado ---------- */
+let abierto = false;
+candado.addEventListener('click', async () => {
+  if (abierto) return;
+  abierto = true;
+
+  /* 1. se abre el candado */
+  candado.classList.add('abierto');
+  pista.classList.add('oculta');
+  await dormir(1400);
+
+  /* 2. salto al hiperespacio: aceleración */
+  suavidad = 1.4;
+  objetivo = VEL_SALTO;
+  await dormir(1300);
+  escenaCandado.classList.add('oculta');   // el candado se desvanece
+  await dormir(Math.max(0, DURACION_SALTO_MS - 1300));
+
+  /* 3. destello y llegada */
+  destello.classList.add('on');
+  await dormir(380);
+  velocidad = objetivo = VEL_CRUCERO;
+  suavidad = 2;
+  canvas.classList.add('tenue');
+  escenaAcrostico.classList.remove('oculta');
+  destello.classList.remove('on');
+
+  /* 4. el acróstico se escribe */
+  await dormir(1400);
+  escribirVersos();
+});
+</script>
+</body>
+</html>
